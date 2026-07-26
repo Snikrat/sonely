@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  spotifyId             String    @unique
+  email                 String?
+  displayName           String?
+  spotifyAccessToken    String?
+  spotifyRefreshToken   String
+  spotifyTokenExpiresAt DateTime?
+  topArtists            String?
+  topTracks             String?
+  history               History[]
+  trackFeedback         TrackFeedback[]
+  createdAt             DateTime  @default(now())
+}
+
+model History {
+  id        String   @id @default(uuid())
+  message   String
+  emotion   Json
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model TrackFeedback {
+  id         String   @id @default(uuid())
+  trackName  String
+  artistName String
+  rating     Int
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, trackName, artistName])
+}
