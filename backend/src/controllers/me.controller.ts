@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import {
+  ensureValidAccessToken,
   getFollowedArtists,
   getLikedSongs,
   getRecentlyPlayed,
@@ -8,7 +9,6 @@ import {
   getTopTracks,
   getTopTracksDetailed,
   getUserPlaylists,
-  refreshAccessToken,
   type TopItemsTimeRange,
 } from "../services/spotifyAuth.service";
 import { dedupeConsecutiveTracks } from "../utils/dedupe";
@@ -21,37 +21,6 @@ const VALID_TIME_RANGES: TopItemsTimeRange[] = [
   "medium_term",
   "long_term",
 ];
-
-async function ensureValidAccessToken(user: {
-  id: string;
-  spotifyAccessToken: string | null;
-  spotifyRefreshToken: string;
-  spotifyTokenExpiresAt: Date | null;
-}) {
-  const isExpired =
-    !user.spotifyAccessToken ||
-    !user.spotifyTokenExpiresAt ||
-    user.spotifyTokenExpiresAt.getTime() <= Date.now();
-
-  if (!isExpired) {
-    return user.spotifyAccessToken as string;
-  }
-
-  const refreshed = await refreshAccessToken(user.spotifyRefreshToken);
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      spotifyAccessToken: refreshed.access_token,
-      spotifyTokenExpiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-      ...(refreshed.refresh_token
-        ? { spotifyRefreshToken: refreshed.refresh_token }
-        : {}),
-    },
-  });
-
-  return refreshed.access_token;
-}
 
 export async function topTracks(req: any, res: Response) {
   try {

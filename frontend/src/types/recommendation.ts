@@ -11,12 +11,23 @@ export type TrackItem = {
   image?: string;
   feedback?: number;
   addedAt?: string;
+  uri?: string;
 };
 
 export type RecommendationResponse = {
   message: string;
   playlists: PlaylistItem[];
   tracks: TrackItem[];
+};
+
+export type GeneratePlaylistResponse = {
+  tracks: TrackItem[];
+};
+
+export type CreatePlaylistResponse = {
+  url: string;
+  name: string;
+  description: string;
 };
 
 export type MoodJournalEntry = {

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { prisma } from "../lib/prisma";
 
 const AUTHORIZE_URL = "https://accounts.spotify.com/authorize";
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -11,6 +12,8 @@ const SCOPES = [
   "user-library-read",
   "user-follow-read",
   "playlist-read-private",
+  "playlist-modify-public",
+  "playlist-modify-private",
 ].join(" ");
 
 type TokenResponse = {
@@ -43,6 +46,11 @@ export function buildAuthorizeUrl(state: string) {
     redirect_uri: process.env.SPOTIFY_REDIRECT_URI || "",
     scope: SCOPES,
     state,
+    // Força o Spotify a sempre mostrar a tela de permissão. Sem isso, quando
+    // o usuário já tinha autorizado o app antes, o Spotify pode pular o
+    // consentimento e devolver um token só com os escopos antigos, ignorando
+    // os escopos novos que acabamos de adicionar (ex: playlist-modify-*).
+    show_dialog: "true",
   });
 
   return `${AUTHORIZE_URL}?${params.toString()}`;
@@ -245,6 +253,71 @@ export async function getFollowedArtists(
     items,
     nextCursor: response.data.artists?.cursors?.after ?? null,
   };
+}
+
+export async function ensureValidAccessToken(user: {
+  id: string;
+  spotifyAccessToken: string | null;
+  spotifyRefreshToken: string;
+  spotifyTokenExpiresAt: Date | null;
+}) {
+  const isExpired =
+    !user.spotifyAccessToken ||
+    !user.spotifyTokenExpiresAt ||
+    user.spotifyTokenExpiresAt.getTime() <= Date.now();
+
+  if (!isExpired) {
+    return user.spotifyAccessToken as string;
+  }
+
+  const refreshed = await refreshAccessToken(user.spotifyRefreshToken);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      spotifyAccessToken: refreshed.access_token,
+      spotifyTokenExpiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+      ...(refreshed.refresh_token
+        ? { spotifyRefreshToken: refreshed.refresh_token }
+        : {}),
+    },
+  });
+
+  return refreshed.access_token;
+}
+
+export async function createPlaylist(
+  accessToken: string,
+  name: string,
+  description: string,
+  isPublic = false,
+) {
+  // A Spotify removeu o endpoint POST /users/{user_id}/playlists na
+  // migração de fev/2026 (para apps em Development Mode). O substituto
+  // oficial é POST /me/playlists, que já opera sobre o usuário do token.
+  const response = await axios.post(
+    "https://api.spotify.com/v1/me/playlists",
+    { name, description, public: isPublic },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  return {
+    id: response.data.id as string,
+    url: response.data.external_urls?.spotify as string,
+  };
+}
+
+export async function addTracksToPlaylist(
+  accessToken: string,
+  playlistId: string,
+  uris: string[],
+) {
+  // Endpoint renomeado de /tracks para /items na mesma migração de fev/2026.
+  await axios.post(
+    `https://api.spotify.com/v1/playlists/${playlistId}/items`,
+    { uris },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
 }
 
 export async function getUserPlaylists(accessToken: string, limit = 20) {

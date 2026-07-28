@@ -15,6 +15,7 @@ function App() {
     const error = params.get("error");
 
     if (code && state) {
+      window.history.replaceState({}, "", window.location.pathname);
       finishSpotifyLogin(code, state);
       return;
     }

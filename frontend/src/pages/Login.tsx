@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api } from "../services/api";
+import { startSpotifyLogin } from "../utils/spotifyLogin";
 import "./login.css";
 
 export default function Login() {
@@ -11,12 +11,7 @@ export default function Login() {
       setLoading(true);
       setError(null);
 
-      const res = await api.get<{ url: string; state: string }>(
-        "/auth/spotify/login-url",
-      );
-
-      sessionStorage.setItem("spotify_oauth_state", res.data.state);
-      window.location.href = res.data.url;
+      await startSpotifyLogin();
     } catch {
       setError("Não foi possível iniciar o login com Spotify.");
       setLoading(false);
