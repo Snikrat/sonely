@@ -47,7 +47,7 @@ function TopTracksSection() {
         <p className="eyebrow">o que você mais ouve</p>
         <h2 className="title">suas músicas mais ouvidas</h2>
         <p className="subtitle">
-          veja seu top faixas no Spotify, filtrando por período — recente,
+          veja seu top faixas no Spotify, filtrando por período, recente,
           últimos 6 meses ou de sempre.
         </p>
       </header>
@@ -77,9 +77,7 @@ function TopTracksSection() {
         ) : null}
 
         {!loading && !error && tracks.length === 0 ? (
-          <p className="emptyText">
-            nenhuma música encontrada nesse período.
-          </p>
+          <p className="emptyText">nenhuma música encontrada nesse período.</p>
         ) : null}
 
         {!loading && !error && tracks.length > 0 ? (
@@ -89,11 +87,7 @@ function TopTracksSection() {
                 <span className="rankBadge">#{index + 1}</span>
 
                 {track.image ? (
-                  <img
-                    className="cover"
-                    src={track.image}
-                    alt={track.name}
-                  />
+                  <img className="cover" src={track.image} alt={track.name} />
                 ) : null}
 
                 <div className="cardContent">
