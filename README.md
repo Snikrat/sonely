@@ -1,6 +1,6 @@
 # 🎧 Sonely
 
-Descubra músicas pelo que você está sentindo. Você escreve como está se sentindo, uma IA interpreta a emoção por trás do texto, e o app busca e ranqueia músicas do Spotify que combinam com esse momento — cruzando isso com o seu histórico de escuta real.
+Descubra músicas pelo que você está sentindo. Você escreve como está se sentindo, uma IA interpreta a emoção por trás do texto, e o app busca e ranqueia músicas do Spotify que combinam com esse momento, cruzando isso com o seu histórico de escuta real.
 
 Além da recomendação, o app funciona como um painel pessoal sobre a sua relação com música: estatísticas do seu perfil, diário de humor, biblioteca do Spotify e histórico de escuta, tudo num só lugar.
 
