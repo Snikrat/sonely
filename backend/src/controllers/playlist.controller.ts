@@ -91,9 +91,37 @@ export async function generatePlaylist(req: any, res: Response) {
   }
 }
 
+export async function generateDescription(req: any, res: Response) {
+  try {
+    const { prompt, tracks } = req.body;
+
+    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+      return res.status(400).json({ error: "Descrição inválida." });
+    }
+
+    if (!Array.isArray(tracks) || tracks.length === 0) {
+      return res.status(400).json({ error: "Lista de músicas inválida." });
+    }
+
+    const description = await generatePlaylistDescription({
+      prompt,
+      tracks: tracks.filter(isTrackRef),
+    });
+
+    return res.json({ description });
+  } catch (error: any) {
+    console.error(
+      "🔥 ERRO ao gerar descrição da playlist:",
+      error?.response?.data || error,
+    );
+
+    return res.status(500).json({ error: "Erro ao gerar descrição da playlist." });
+  }
+}
+
 export async function createPlaylist(req: any, res: Response) {
   try {
-    const { name, tracks, prompt } = req.body;
+    const { name, tracks, prompt, description: providedDescription } = req.body;
 
     if (!prompt || typeof prompt !== "string") {
       return res.status(400).json({ error: "Descrição inválida." });
@@ -121,10 +149,13 @@ export async function createPlaylist(req: any, res: Response) {
     const playlistName =
       typeof name === "string" && name.trim() ? name.trim() : DEFAULT_NAME;
 
-    const description = await generatePlaylistDescription({
-      prompt,
-      tracks: tracks.filter(isTrackRef),
-    });
+    const description =
+      typeof providedDescription === "string" && providedDescription.trim()
+        ? providedDescription.trim().slice(0, 300)
+        : await generatePlaylistDescription({
+            prompt,
+            tracks: tracks.filter(isTrackRef),
+          });
 
     const playlist = await createSpotifyPlaylist(
       accessToken,

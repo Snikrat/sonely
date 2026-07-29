@@ -4,10 +4,11 @@ type ModalProps = {
   title: string;
   onClose: () => void;
   onScrollEnd?: () => void;
+  footer?: ReactNode;
   children: ReactNode;
 };
 
-function Modal({ title, onClose, onScrollEnd, children }: ModalProps) {
+function Modal({ title, onClose, onScrollEnd, footer, children }: ModalProps) {
   function handleScroll(e: UIEvent<HTMLDivElement>) {
     if (!onScrollEnd) return;
 
@@ -35,6 +36,8 @@ function Modal({ title, onClose, onScrollEnd, children }: ModalProps) {
         <div className="modalBody" onScroll={handleScroll}>
           {children}
         </div>
+
+        {footer ? <div className="modalFooter">{footer}</div> : null}
       </div>
     </div>
   );

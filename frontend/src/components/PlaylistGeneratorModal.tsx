@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../services/api";
 import type {
   CreatePlaylistResponse,
+  GenerateDescriptionResponse,
   GeneratePlaylistResponse,
   TrackItem,
 } from "../types/recommendation";
@@ -13,6 +14,8 @@ type PlaylistGeneratorModalProps = {
   initialTracks: TrackItem[];
   onClose: () => void;
 };
+
+type Step = "select" | "review";
 
 type CreateError = {
   message: string;
@@ -42,12 +45,16 @@ function PlaylistGeneratorModal({
   initialTracks,
   onClose,
 }: PlaylistGeneratorModalProps) {
+  const [step, setStep] = useState<Step>("select");
   const [tracks, setTracks] = useState<TrackItem[]>(initialTracks);
   const [keptKeys, setKeptKeys] = useState<Set<string>>(new Set());
   const [seenTracks, setSeenTracks] = useState<TrackItem[]>(initialTracks);
   const [regenLoading, setRegenLoading] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
+  const [descLoading, setDescLoading] = useState(false);
+  const [descError, setDescError] = useState<string | null>(null);
   const [playlistName, setPlaylistName] = useState("SONELY PLAYLIST");
+  const [description, setDescription] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<CreateError | null>(null);
   const [result, setResult] = useState<CreatePlaylistResponse | null>(null);
@@ -90,6 +97,26 @@ function PlaylistGeneratorModal({
     }
   }
 
+  async function handleContinue() {
+    try {
+      setDescLoading(true);
+      setDescError(null);
+
+      const response = await api.post<GenerateDescriptionResponse>(
+        "/playlist/description",
+        { prompt, tracks },
+      );
+
+      setDescription(response.data.description);
+      setStep("review");
+    } catch (err) {
+      console.error("Erro ao gerar descrição:", err);
+      setDescError("Não foi possível gerar a descrição agora.");
+    } finally {
+      setDescLoading(false);
+    }
+  }
+
   async function handleCreate() {
     try {
       setCreateLoading(true);
@@ -97,7 +124,7 @@ function PlaylistGeneratorModal({
 
       const response = await api.post<CreatePlaylistResponse>(
         "/playlist/create",
-        { name: playlistName, tracks, prompt },
+        { name: playlistName, description, tracks, prompt },
       );
 
       setResult(response.data);
@@ -142,12 +169,106 @@ function PlaylistGeneratorModal({
     );
   }
 
+  if (step === "review") {
+    return (
+      <Modal
+        title="revise sua playlist"
+        onClose={onClose}
+        footer={
+          <div className="modalActionsRow">
+            <button
+              type="button"
+              className="buttonSecondary"
+              onClick={() => setStep("select")}
+              disabled={createLoading}
+            >
+              voltar
+            </button>
+
+            <button
+              type="button"
+              className="button"
+              onClick={handleCreate}
+              disabled={createLoading}
+            >
+              {createLoading ? "criando..." : "criar playlist"}
+            </button>
+          </div>
+        }
+      >
+        <label className="label" htmlFor="playlistName">
+          nome da playlist
+        </label>
+
+        <input
+          id="playlistName"
+          className="textInput"
+          value={playlistName}
+          onChange={(e) => setPlaylistName(e.target.value)}
+        />
+
+        <label className="label" htmlFor="playlistDescription">
+          descrição
+        </label>
+
+        <textarea
+          id="playlistDescription"
+          className="textarea textareaSmall"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={300}
+          rows={4}
+        />
+
+        {createError ? (
+          <div className="resultMessage">
+            <p>{createError.message}</p>
+
+            {createError.needsReconnect ? (
+              <button
+                type="button"
+                className="button"
+                onClick={() => startSpotifyLogin()}
+              >
+                reconectar com spotify
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </Modal>
+    );
+  }
+
   return (
-    <Modal title="sua playlist gerada" onClose={onClose}>
+    <Modal
+      title="sua playlist gerada"
+      onClose={onClose}
+      footer={
+        <div className="modalActionsRow">
+          <button
+            type="button"
+            className="buttonSecondary"
+            onClick={handleRegenerate}
+            disabled={regenLoading || descLoading}
+          >
+            {regenLoading ? "gerando..." : "gerar novamente"}
+          </button>
+
+          <button
+            type="button"
+            className="button"
+            onClick={handleContinue}
+            disabled={regenLoading || descLoading}
+          >
+            {descLoading ? "preparando..." : "continuar"}
+          </button>
+        </div>
+      }
+    >
       <p className="resultMessage">
         marque as músicas que você mais gostou e clique em "gerar novamente"
-        pra trocar o restante. quando estiver satisfeito, crie a playlist no
-        seu Spotify.
+        pra trocar o restante. quando estiver satisfeito, continue pra criar
+        a playlist no seu Spotify.
       </p>
 
       <div className="cardList">
@@ -195,51 +316,7 @@ function PlaylistGeneratorModal({
       </div>
 
       {regenError ? <p className="resultMessage">{regenError}</p> : null}
-
-      <button
-        type="button"
-        className="button"
-        onClick={handleRegenerate}
-        disabled={regenLoading || createLoading}
-      >
-        {regenLoading ? "gerando novamente..." : "gerar novamente"}
-      </button>
-
-      <label className="label" htmlFor="playlistName">
-        nome da playlist
-      </label>
-
-      <input
-        id="playlistName"
-        className="textInput"
-        value={playlistName}
-        onChange={(e) => setPlaylistName(e.target.value)}
-      />
-
-      {createError ? (
-        <div className="resultMessage">
-          <p>{createError.message}</p>
-
-          {createError.needsReconnect ? (
-            <button
-              type="button"
-              className="button"
-              onClick={() => startSpotifyLogin()}
-            >
-              reconectar com spotify
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      <button
-        type="button"
-        className="button"
-        onClick={handleCreate}
-        disabled={createLoading || regenLoading}
-      >
-        {createLoading ? "criando..." : "criar playlist"}
-      </button>
+      {descError ? <p className="resultMessage">{descError}</p> : null}
     </Modal>
   );
 }

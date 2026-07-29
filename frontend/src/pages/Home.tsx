@@ -29,9 +29,9 @@ const MENU_OPTIONS: {
   label: string;
   Icon: typeof SparkleIcon;
 }[] = [
-  { value: "recommend", label: "recomendar", Icon: SparkleIcon },
   { value: "topTracks", label: "mais ouvidas", Icon: TrendingIcon },
   { value: "recentlyPlayed", label: "recente", Icon: ClockIcon },
+  { value: "recommend", label: "recomendar", Icon: SparkleIcon },
   { value: "library", label: "biblioteca", Icon: LibraryIcon },
   { value: "journal", label: "diário", Icon: JournalIcon },
 ];
@@ -95,6 +95,15 @@ function Home({ userName, onLogout }: HomeProps) {
             </header>
 
             <div className="modeToggle">
+              <span
+                className={
+                  mode === "generate"
+                    ? "modeToggleThumb modeToggleThumbGenerate"
+                    : "modeToggleThumb"
+                }
+                aria-hidden="true"
+              />
+
               <button
                 type="button"
                 className={

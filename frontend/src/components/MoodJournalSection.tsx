@@ -22,25 +22,31 @@ const ENERGY_LABELS: { key: "baixa" | "media" | "alta"; label: string }[] = [
   { key: "alta", label: "alta" },
 ];
 
+type MoodJournalResponse = {
+  entries: MoodJournalEntry[];
+  total: number;
+  stats: MoodStats;
+  historyStats: HistoryStats;
+};
+
 function MoodJournalSection() {
   const [entries, setEntries] = useState<MoodJournalEntry[]>([]);
+  const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<MoodStats | null>(null);
   const [historyStats, setHistoryStats] = useState<HistoryStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     api
-      .get<{
-        entries: MoodJournalEntry[];
-        stats: MoodStats;
-        historyStats: HistoryStats;
-      }>("/mood-journal")
+      .get<MoodJournalResponse>("/mood-journal")
       .then((res) => {
         if (active) {
           setEntries(res.data.entries);
+          setTotal(res.data.total);
           setStats(res.data.stats);
           setHistoryStats(res.data.historyStats);
         }
@@ -56,6 +62,23 @@ function MoodJournalSection() {
       active = false;
     };
   }, []);
+
+  function loadMore() {
+    if (loadingMore || entries.length >= total) return;
+
+    setLoadingMore(true);
+
+    api
+      .get<MoodJournalResponse>("/mood-journal", {
+        params: { offset: entries.length },
+      })
+      .then((res) => {
+        setEntries((prev) => [...prev, ...res.data.entries]);
+        setTotal(res.data.total);
+      })
+      .catch(() => setTotal(entries.length))
+      .finally(() => setLoadingMore(false));
+  }
 
   const hero = (
     <header className="hero">
@@ -198,6 +221,17 @@ function MoodJournalSection() {
             ))}
           </div>
         )}
+
+        {entries.length < total ? (
+          <button
+            type="button"
+            className="buttonSecondary"
+            onClick={loadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? "carregando..." : "carregar mais"}
+          </button>
+        ) : null}
       </div>
       </section>
     </>

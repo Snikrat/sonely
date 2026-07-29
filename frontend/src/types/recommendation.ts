@@ -24,6 +24,10 @@ export type GeneratePlaylistResponse = {
   tracks: TrackItem[];
 };
 
+export type GenerateDescriptionResponse = {
+  description: string;
+};
+
 export type CreatePlaylistResponse = {
   url: string;
   name: string;

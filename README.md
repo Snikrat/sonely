@@ -29,6 +29,12 @@ Você escreve uma mensagem livre (ex: "hoje eu tô cansado, meio ansioso e queri
 
 Com isso, o app monta uma busca no Spotify e ranqueia os resultados com uma pontuação que leva em conta: match de gênero/vibe com a emoção detectada, histórico de mensagens anteriores, se o artista/faixa já está no seu top pessoal do Spotify, e o feedback (👍/👎) que você já deu em recomendações passadas. Cada recomendação vira uma entrada no seu diário de humor.
 
+### 🎶 Gerar
+
+Um segundo modo na mesma tela (alternado por um toggle no topo): em vez de receber algumas sugestões, você descreve a playlist que quer criar — gosto musical, clima, atividade, sentimento, o que for — e a IA monta uma seleção de 20 músicas reais, resolvidas contra a busca do Spotify.
+
+Você pode marcar ⭐ as faixas que mais gostou e pedir pra gerar de novo: as marcadas ficam, as outras são substituídas por novas sugestões, refinando a playlist aos poucos. Quando estiver satisfeito, um passo de revisão mostra o nome (padrão "SONELY PLAYLIST") e uma descrição gerada pela IA, ambos editáveis, antes de criar a playlist de verdade na sua conta do Spotify.
+
 ### 🔥 Mais ouvidas
 
 Seu top faixas no Spotify, filtrando por período (recente / últimos 6 meses / sempre).
@@ -67,8 +73,8 @@ Dá pra gerar um **recap** — uma imagem (desenhada em canvas, sem depender de 
 **Backend** — Express + TypeScript, Prisma com SQLite (via `better-sqlite3`), autenticação por JWT.
 
 **Integrações externas**:
-- **Spotify** — OAuth (login), busca de músicas/playlists, top tracks/artists, recently played, biblioteca (curtidas, seguidos, playlists)
-- **OpenAI** — análise de emoção da mensagem do usuário
+- **Spotify** — OAuth (login), busca de músicas/playlists, top tracks/artists, recently played, biblioteca (curtidas, seguidos, playlists), criação de playlists
+- **OpenAI** — análise de emoção da mensagem do usuário, sugestão de faixas e descrição das playlists geradas
 
 **Testes** — Vitest, cobrindo as funções puras do backend (ranqueamento, estatísticas).
 
@@ -134,7 +140,9 @@ Abra `http://localhost:5173` e entre com sua conta do Spotify.
 
 ### Escopos do Spotify usados
 
-`user-read-email`, `user-read-private`, `user-top-read`, `user-read-recently-played`, `user-library-read`, `user-follow-read`, `playlist-read-private`.
+`user-read-email`, `user-read-private`, `user-top-read`, `user-read-recently-played`, `user-library-read`, `user-follow-read`, `playlist-read-private`, `playlist-modify-public`, `playlist-modify-private`.
+
+Se você já tinha logado antes desses dois últimos escopos serem adicionados, é preciso sair e entrar de novo (ou usar o botão "reconectar com Spotify" que aparece se a criação de playlist falhar) pra autorizar a permissão nova.
 
 ## Testes
 
@@ -151,6 +159,7 @@ Desde nov/2024 a Spotify restringiu vários dados e endpoints pra apps sem "Exte
 - **Sem `popularity`** nas faixas — não dá pra montar um indicador de "mainstream vs. indie".
 - **Busca (`/search`) limitada a `limit ≤ 10`** quando combina `type=track,playlist`, e a **query tem limite de 250 caracteres** — o backend já trunca a query automaticamente por causa disso.
 - Endpoints de `recommendations`, `audio-features` e `related-artists` estão bloqueados — não usados aqui.
+- **Migração de fev/2026**: a Spotify removeu `POST /users/{user_id}/playlists` para apps em Development Mode. Criar playlist agora usa `POST /me/playlists`, e adicionar faixas usa `POST /playlists/{id}/items` (renomeado de `/tracks`). O código já está atualizado pros endpoints novos.
 
 ## Deploy
 

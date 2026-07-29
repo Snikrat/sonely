@@ -414,14 +414,41 @@ a {
 }
 
 .modeToggle {
+  position: relative;
   display: flex;
   gap: 4px;
+  padding: 4px;
   margin-bottom: 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+}
+
+.modeToggleThumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 6px);
+  height: calc(100% - 8px);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-start) 0%,
+    var(--color-accent-end) 100%
+  );
+  box-shadow: 0 8px 20px var(--color-accent-soft-bg);
+  transition: transform 0.25s ease;
+}
+
+.modeToggleThumbGenerate {
+  transform: translateX(calc(100% + 4px));
 }
 
 .modeToggleTab {
+  position: relative;
+  z-index: 1;
   flex: 1;
-  border: 1px solid var(--color-border-strong);
+  border: none;
   border-radius: 999px;
   padding: 10px 12px;
   font-size: 0.88rem;
@@ -429,12 +456,11 @@ a {
   color: var(--color-text-secondary);
   background: transparent;
   cursor: pointer;
+  transition: color 0.25s ease;
 }
 
 .modeToggleTabActive {
-  background: var(--color-accent-soft-bg);
-  border-color: var(--color-accent-end);
-  color: var(--color-accent-start);
+  color: var(--color-accent-text);
 }
 
 .textInput {
@@ -555,6 +581,48 @@ a {
   transform: none;
 }
 
+.buttonSecondary {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.buttonSecondary:hover {
+  border-color: var(--color-accent-end);
+  color: var(--color-accent-start);
+}
+
+.buttonSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modalActionsRow {
+  display: flex;
+  gap: 10px;
+}
+
+.modalActionsRow .button,
+.modalActionsRow .buttonSecondary {
+  flex: 1;
+  margin-top: 14px;
+}
+
+.textareaSmall {
+  min-height: 90px;
+}
+
 .sectionTitle {
   margin: 0 0 12px;
   font-size: 1rem;
@@ -594,7 +662,7 @@ a {
 
 .resultMessage,
 .emptyText {
-  margin: 0;
+  margin: 0 0 16px;
   line-height: 1.6;
   color: var(--color-text-secondary);
 }
@@ -793,6 +861,19 @@ a {
 .modalBody {
   padding: 0 16px 16px;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.modalFooter {
+  flex-shrink: 0;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.modalFooter .button,
+.modalFooter .buttonSecondary {
+  margin-top: 0;
 }
 
 .modalSearch {

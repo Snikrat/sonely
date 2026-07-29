@@ -130,24 +130,39 @@ export async function recommend(req: any, res: Response) {
   }
 }
 
+const MOOD_JOURNAL_PAGE_SIZE = 20;
+
 export async function moodJournal(req: any, res: Response) {
   try {
-    const history = await prisma.history.findMany({
-      where: { userId: req.userId },
-      orderBy: { createdAt: "desc" },
-    });
+    const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
 
-    const entries = history.slice(0, 50).map((h) => ({
+    // As estatísticas consideram o histórico inteiro, mas só precisam de
+    // emotion/createdAt — busca separada e enxuta pra não paginar por ela.
+    const [total, page, statsRows] = await Promise.all([
+      prisma.history.count({ where: { userId: req.userId } }),
+      prisma.history.findMany({
+        where: { userId: req.userId },
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: MOOD_JOURNAL_PAGE_SIZE,
+      }),
+      prisma.history.findMany({
+        where: { userId: req.userId },
+        select: { emotion: true, createdAt: true },
+      }),
+    ]);
+
+    const entries = page.map((h) => ({
       id: h.id,
       message: h.message,
       emotion: h.emotion as any,
       createdAt: h.createdAt,
     }));
 
-    const stats = computeMoodStats(history as any);
-    const historyStats = computeHistoryStats(history as any);
+    const stats = computeMoodStats(statsRows as any);
+    const historyStats = computeHistoryStats(statsRows as any);
 
-    return res.json({ entries, stats, historyStats });
+    return res.json({ entries, total, stats, historyStats });
   } catch (error: any) {
     console.error("Erro ao buscar diário de humor:", error?.response?.data || error);
 
